@@ -1,0 +1,22 @@
+#namespace("user")
+  #sql("sql1")
+   /*query user whose username is u1*/
+    select * from user where username like concat('%','#(username)','%') az like_user;
+    /*query user whose username is username*/
+    select sum(age) from like_user;
+  #end
+
+  #sql("sql2")
+   /* comment here */
+    select * from user where username like concat('%','#(username)','%') az like_user;
+    /*comment here */
+    select username , avg(age) avg_age from like_user
+    group by username az avg_user;
+    /* comment here  */
+  #end
+
+  #sql("sql3")
+   /* comment here */
+   select sum(avg_age) from avg_user ;
+  #end
+#end

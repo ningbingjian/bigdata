@@ -1,0 +1,33 @@
+#namespace("dept")
+  #sql("count")
+  /*
+
+  查询总人数
+
+  ----
+  dfasfdfa
+  @@@@@
+   */
+ select count(1) from dept as t1 ;
+
+   /*
+
+  查询总人数
+
+  ----
+  dfasfdfa
+  adfasdfas
+  f
+  asdf
+  asdfasfafadsfsaf
+  @@@@@
+   */
+
+
+ select count(1) from t1 ;
+
+
+
+  #end
+
+#end
