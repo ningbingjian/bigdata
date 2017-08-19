@@ -12,11 +12,8 @@ object ItemCFRecommenderJob {
   def main(args: Array[String]): Unit = {
     val input =  args(0)
     val output = args(1)
-    println(Math.sqrt(0.0/0.0))
     val spark = SparkSession.builder()
-        .config("spark.executor.heartbeatInterval","1200000s")
-        .master("local[1]")
-        .appName("test").getOrCreate()
+        .appName(this.getClass.getName.stripSuffix("$")).getOrCreate()
 
     import spark.implicits._
     val data = spark.sparkContext.textFile(input)
@@ -31,7 +28,7 @@ object ItemCFRecommenderJob {
       .similarity(new PearsonCorrelationSimilarity())
     val items = itemCFRecommender.transform(ratingDF)
     items.saveAsTextFile(output)
-   // items.collect().foreach(println)
+    //items.collect().foreach(println)
 
   }
 }
