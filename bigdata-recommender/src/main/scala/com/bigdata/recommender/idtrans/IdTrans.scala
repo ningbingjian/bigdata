@@ -1,7 +1,7 @@
 package com.bigdata.recommender.idtrans
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
 
 import org.apache.spark.sql.{DataFrame, Row, RowFactory, SaveMode}
 import org.apache.spark.sql.functions._
@@ -29,7 +29,8 @@ class IdTrans{ self =>
     val transDF = idDF.repartition(1)
         .rdd
         .mapPartitions(rows => {
-          val dt = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+          val sdf = new SimpleDateFormat("yyyy-MM-dd")
+          val dt = sdf.format(new Date())
           var curid = 0
           val newRows = ListBuffer[(Int,String,String)]()
           for(row <- rows){
