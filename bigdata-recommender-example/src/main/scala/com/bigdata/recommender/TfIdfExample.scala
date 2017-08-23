@@ -33,17 +33,21 @@ object TfIdfExample {
       .getOrCreate()
 
     // $example on$
-    val sentenceData = spark.createDataFrame(Seq(
+/*    val sentenceData = spark.createDataFrame(Seq(
       (0.0, "Hi I heard about Spark"),
       (0.0, "I wish Java could use case classes"),
       (1.0, "Logistic regression models are neat")
+    )).toDF("label", "sentence")*/
+    val sentenceData = spark.createDataFrame(Seq(
+      (0.0, "在中 遍历 递归 使用中 使用 遍历 历访 访问 子树 访问 根 节点 最后 递归 使用中 使用 遍历 历访 访问 子树 遍历"),
+      (1.0, "在后 后序 遍历 递归 使用 用后 后序 遍历 历访 访问 子树 子树 最后 访问 根 节点 子树 子树 根 节点 后序 遍历")
     )).toDF("label", "sentence")
 
     val tokenizer = new Tokenizer().setInputCol("sentence").setOutputCol("words")
     val wordsData = tokenizer.transform(sentenceData)
 
     val hashingTF = new HashingTF()
-      .setInputCol("words").setOutputCol("rawFeatures").setNumFeatures(20)
+      .setInputCol("words").setOutputCol("rawFeatures").setNumFeatures(1<<20)
 
     val featurizedData = hashingTF.transform(wordsData)
     // alternatively, CountVectorizer can also be used to get term frequency vectors

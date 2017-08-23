@@ -86,17 +86,18 @@ class Semantic extends Serializable{ self =>
           row.getAs[Seq[String]](wordCol),
           row.getAs[String](idCol))
 
-        val sparseFeatures = features.toSparse
+        //val sparseFeatures = features.toSparse
 
-        val zipFeature = sparseFeatures.indices.zip(sparseFeatures.values)
+        //val zipFeature = sparseFeatures.indices.zip(sparseFeatures.values)
+        val zipFeature = features.indices.zip(features.values)
         val buf = ListBuffer[(Int,(String,MLV))]()
         for((indice,value) <- zipFeature){
-          buf append ((indice,(id,sparseFeatures)))
+          buf append ((indice,(id,features)))
         }
         buf
     }
       .groupByKey()
-     // .filter(_._2.size < numWordPerDocument)
+      .filter(_._2.size < numWordPerDocument)
     topFeatureRDD.collect.foreach(println)
     topFeatureRDD
   }

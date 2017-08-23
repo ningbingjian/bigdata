@@ -7,7 +7,8 @@ import org.apache.spark.sql.SparkSession
   */
 object SemanticJob {
   def main(args: Array[String]): Unit = {
-    System.setProperty("hadoop.home.dir","D:\\tools\\hadoop-v2\\hadoop-2.6.0")
+   // System.setProperty("hadoop.home.dir","D:\\tools\\hadoop-v2\\hadoop-2.6.0")
+    System.setProperty("hadoop.home.dir","D:\\tool\\hadoop\\hadoop-2.7.1")
     val spark = SparkSession.builder()
       .master("local[1]")
       .appName(this.getClass.getName.stripSuffix("$"))
