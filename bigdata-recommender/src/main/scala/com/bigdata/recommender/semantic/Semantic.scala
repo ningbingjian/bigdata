@@ -82,12 +82,12 @@ class Semantic extends Serializable{ self =>
   def calSim(tfidfDF:DataFrame,wordWeightBc:Broadcast[Map[String,Map[Int,Double]]] = null):RDD[(Int,Iterable[(String,MLV)])] = {
     val topFeatureRDD = tfidfDF.rdd.flatMap{
       case row =>
-        val (features,words,id) = (
-          row.getAs[SparseVector](featuresCol),
+        val (rawfeatures,words,id) = (
+          row.getAs[MLV](featuresCol),
           row.getAs[Seq[String]](wordCol),
           row.getAs[String](idCol))
 
-        //val sparseFeatures = features.toSparse
+        val features = rawfeatures.toSparse
 
         //val zipFeature = sparseFeatures.indices.zip(sparseFeatures.values)
 

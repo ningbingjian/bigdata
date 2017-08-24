@@ -71,6 +71,17 @@ object SemanticJob {
           |1）我的VPS是64位的Ubuntu 12.04，
           |所以安装numpy和scipy比较简单"sudo apt-get install python-numpy python-scipy", 之后解压gensim的安装包，直接“sudo python setup.py install"即可；
           |
+        """.stripMargin) ,
+      ("05","中国人民解放军",
+        """
+          |1、安装
+          |gensim依赖NumPy和SciPy这两大Python科学计算工具包，一种简单的安装方法是pip install，但是国内因为网络的缘故常常失败。
+          |所以我是下载了gensim的源代码包安装的。gensim的这个官方安装页面很详细的列举了兼容的Python和NumPy,
+          |SciPy的版本号以及安装步骤，感兴趣的同学可以直接参考。
+          |下面我仅仅说明在Ubuntu和Mac OS下的安装：
+          |1）我的VPS是64位的Ubuntu 12.04，
+          |所以安装numpy和scipy比较简单"sudo apt-get install python-numpy python-scipy", 之后解压gensim的安装包，直接“sudo python setup.py install"即可；
+          |
         """.stripMargin)
     ).toDF("id","title","body")
     semantic.transform(inputDF)
