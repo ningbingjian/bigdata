@@ -7,11 +7,13 @@ import org.apache.spark.ml.feature.{HashingTF, IDF}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import com.bigdata.common.dfs.DfsUtil
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.linalg.{SparseVector, Vector => MLV}
+import org.apache.spark.mllib.feature
 /**
   * Created by ning on 2017/8/22.
   */
@@ -27,6 +29,7 @@ class Semantic extends Serializable{ self =>
   private var numWordPerDocument = 5000
   private var numTopSimilariyDocument = 200
   private val fieldColSetting = mutable.Map[String,(Boolean,Boolean,Double)]()
+  private var mlHashingTF:HashingTF = _
   def setIdCol(idCol:String): this.type ={
     self.idCol = idCol
     self
@@ -58,27 +61,25 @@ class Semantic extends Serializable{ self =>
     val spark = inputDF.sparkSession
     val wordDF = toWordDF(inputDF)
     val wordWeightRDD = toWordWeigthRDD(wordDF)
-    val wordWeightBc = inputDF.sparkSession.sparkContext.broadcast(wordWeightRDD.collectAsMap())
+    val wordWeightBc = inputDF.sparkSession.sparkContext.broadcast(wordWeightRDD.collect().toMap)
     val tfidfDF = calTfIdf(wordDF)
-    val topFeatureRDD = calSim(tfidfDF)
+    val topFeatureRDD = calSim(tfidfDF,wordWeightBc)
     externalCompute(topFeatureRDD,spark)
   }
   def calTfIdf(wordDF:DataFrame): DataFrame ={
-    val hashingTF = new HashingTF()
+    mlHashingTF = new HashingTF()
       .setNumFeatures(numFeatures)
       .setInputCol(wordCol)
       .setOutputCol(rawfeaturesCol)
-    val rawfeaturesDF = hashingTF.transform(wordDF)
-    rawfeaturesDF.collect().foreach(println)
+    val rawfeaturesDF = mlHashingTF.transform(wordDF)
     val idfModel = new IDF()
       .setInputCol(rawfeaturesCol)
       .setOutputCol(featuresCol)
       .fit(rawfeaturesDF)
     val tfidfDF = idfModel.transform(rawfeaturesDF)
-    tfidfDF.collect().foreach(println)
     tfidfDF
   }
-  def calSim(tfidfDF:DataFrame):RDD[(Int,Iterable[(String,MLV)])] = {
+  def calSim(tfidfDF:DataFrame,wordWeightBc:Broadcast[Map[String,Map[Int,Double]]] = null):RDD[(Int,Iterable[(String,MLV)])] = {
     val topFeatureRDD = tfidfDF.rdd.flatMap{
       case row =>
         val (features,words,id) = (
@@ -89,7 +90,18 @@ class Semantic extends Serializable{ self =>
         //val sparseFeatures = features.toSparse
 
         //val zipFeature = sparseFeatures.indices.zip(sparseFeatures.values)
-        val zipFeature = features.indices.zip(features.values)
+
+        val zipFeature = if(wordWeightBc == null){
+          features.indices.zip(features.values)
+        }else{
+          val wordWeightMap = wordWeightBc.value(id)
+          val newValues = ListBuffer[Double]()
+          for(i <- 0 until features.indices.length){
+            val weight = wordWeightMap(features.indices(i))
+            newValues.append(features.values(i) * i )
+          }
+          features.indices.zip(newValues)
+        }
         val buf = ListBuffer[(Int,(String,MLV))]()
         for((indice,value) <- zipFeature){
           buf append ((indice,(id,features)))
@@ -98,10 +110,9 @@ class Semantic extends Serializable{ self =>
     }
       .groupByKey()
       .filter(_._2.size < numWordPerDocument)
-    topFeatureRDD.collect.foreach(println)
     topFeatureRDD
   }
-  def externalCompute(topFeatureRDD:RDD[(Int,Iterable[(String,MLV)])],spark:SparkSession) ={
+  def externalCompute(topFeatureRDD:RDD[(Int,Iterable[(String,MLV)])],spark:SparkSession):RDD[(String,Seq[(String,Double)])] ={
     DfsUtil.deleteQuiet(coosimDir)
     val coosimDirBc = spark.sparkContext.broadcast(coosimDir)
     topFeatureRDD.mapPartitionsWithIndex{
@@ -142,9 +153,10 @@ class Semantic extends Serializable{ self =>
       }
   }
 
-  def toWordWeigthRDD(wordDF:DataFrame): RDD[(String,Map[String,Double])] ={
+  def toWordWeigthRDD(wordDF:DataFrame): RDD[(String,Map[Int,Double])] ={
     wordDF.rdd.map{
       case row =>
+        val mlibHashingTF = new feature.HashingTF(numFeatures).setBinary(false)
         val id = row.getAs(idCol).toString
         val words = row.getAs[Seq[String]](wordCol)
         val weights = row.getAs[Seq[Double]](weightCol)
@@ -155,10 +167,11 @@ class Semantic extends Serializable{ self =>
           weights.append(v)
           wordWeightMap(k) = weights
         }
-        val finalWordWeight = mutable.Map[String,Double]()
+        val finalWordWeight = mutable.Map[Int,Double]()
         for((k,v) <- wordWeightMap){
+          val wordIdx = mlibHashingTF.indexOf(k)
           val avgWeight = v.sum/v.size
-          finalWordWeight(k) = avgWeight
+          finalWordWeight(wordIdx) = avgWeight
         }
         (id,finalWordWeight.toMap)
     }

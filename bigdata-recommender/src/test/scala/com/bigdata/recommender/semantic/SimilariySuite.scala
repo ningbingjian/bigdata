@@ -32,8 +32,8 @@ object SimilariySuite {
 
     val v1 = MLVS.sparse(1048576,value1)
     val v2 = MLVS.sparse(1048576,value2)
-   /* val v1 = MLVS.sparse(3,Seq((0,2.0),(1,3.0)))
-    val v2 = MLVS.sparse(3,Seq((0,2.0),(1,3.0),(2,4.0)))*/
+    val v3 = MLVS.sparse(3,Seq((0,2.0),(1,3.0)))
+    val v4 = MLVS.sparse(3,Seq((0,2.0),(1,3.0)))
     println(Similariy.cosine(v1,v2))
   }
 }

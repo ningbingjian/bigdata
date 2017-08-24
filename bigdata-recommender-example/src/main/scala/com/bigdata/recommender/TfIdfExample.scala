@@ -40,7 +40,8 @@ object TfIdfExample {
     )).toDF("label", "sentence")*/
     val sentenceData = spark.createDataFrame(Seq(
       (0.0, "在中 遍历 递归 使用中 使用 遍历 历访 访问 子树 访问 根 节点 最后 递归 使用中 使用 遍历 历访 访问 子树 遍历"),
-      (1.0, "在后 后序 遍历 递归 使用 用后 后序 遍历 历访 访问 子树 子树 最后 访问 根 节点 子树 子树 根 节点 后序 遍历")
+      (1.0, "在中 遍历 递归 使用中 使用 遍历 历访 访问 子树 访问 根 节点 最后 递归 使用中 使用 遍历 历访 访问 子树 遍历")
+      //(1.0, "在后 后序 遍历 递归 使用 用后 后序 遍历 历访 访问 子树 子树 最后 访问 根 节点 子树 子树 根 节点 后序 遍历")
     )).toDF("label", "sentence")
 
     val tokenizer = new Tokenizer().setInputCol("sentence").setOutputCol("words")
