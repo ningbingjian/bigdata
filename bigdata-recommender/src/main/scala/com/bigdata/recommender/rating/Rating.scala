@@ -10,20 +10,24 @@ import org.apache.spark.sql.functions.col
   * Created by ning on 2017/8/2.
   */
 
-class Rating extends Serializable{
-  val paramMap = mutable.Map[String,Any]()
+class Rating extends Serializable{ self =>
+  var userCol = "userid"
+  var itemCol = "itemid"
+  var actionCol = "action"
+  var weightCol = "weight"
+  var transIdColPrefix = "int_"
   var existRating :DataFrame = _
   var weightReader:WeightReader = _
   def setUserCol(name:String) :this.type={
-    paramMap(Rating.userCol) = name
-    this
+    self.userCol = name
+    self
   }
   def setItemCol(name:String) :this.type = {
-    paramMap(Rating.itemCol) = name
-    this
+    self.itemCol = name
+    self
   }
   def setActionCol(name:String) :this.type = {
-    paramMap(Rating.actionCol) = name
+    self.actionCol = name
     this
   }
   def setWeightReader(weightReader: WeightReader):this.type = {
@@ -41,23 +45,19 @@ class Rating extends Serializable{
     df.sparkSession.udf.register("rating_compute",(weights:Seq[Double]) => {
       ratingCompute(weights :_*)
     })
-    val userId = paramMap(Rating.userCol).asInstanceOf[String]
-    val itemId = paramMap(Rating.itemCol).asInstanceOf[String]
-    val action = paramMap(Rating.actionCol).asInstanceOf[String]
-    val weightDF = df.select(col(userId).as(Rating.userCol),col(itemId).as(Rating.itemCol),col(action).as(Rating.actionCol),expr(s"getWeight(${action})").as(Rating.weightCol))
+    val weightDF = df.select(col(userCol),col(itemCol),col(actionCol),expr(s"getWeight(${actionCol})").as(weightCol))
     def compute(df:DataFrame) = {
-      weightDF.groupBy(col(Rating.userCol),col(Rating.itemCol))
-        .agg(expr(s"collect_set(${Rating.weightCol})").as(Rating.weightCol))
-        .select(col(Rating.userCol),col(Rating.itemCol),expr(s"rating_compute(${Rating.weightCol})").as(Rating.weightCol))
+      df.groupBy(col(userCol),col(itemCol))
+        .agg(expr(s"collect_set(${weightCol})").as(weightCol))
+        .select(col(userCol),col(itemCol),expr(s"rating_compute(${weightCol})").as(weightCol))
     }
-
     var curRatingDF = compute(weightDF)
-    curRatingDF.show()
     if(existRating != null){
       val unionDF = curRatingDF.union(existRating)
       compute(unionDF)
+    }else{
+      curRatingDF
     }
-    curRatingDF
   }
   private def ratingCompute(ratings:Double*) = {
     var sum = 0.0
@@ -76,9 +76,6 @@ class Rating extends Serializable{
 
 }
 object Rating{
-  val userCol = "userid"
-  val itemCol = "itemid"
-  val actionCol = "action"
-  val weightCol = "weight"
+  def apply(): Rating = new Rating()
   val ITEMCF_RATING_LIMIT = 5.0
 }

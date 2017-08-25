@@ -1,5 +1,6 @@
 package com.bigdata.recommender.als
 
+import com.bigdata.common.command.CommandLineBuilder
 import com.bigdata.recommender.idtrans.IdTrans
 import com.bigdata.zql.ZqlFlowManager
 import org.apache.spark.mllib.recommendation.Rating

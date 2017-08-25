@@ -10,9 +10,9 @@ import com.bigdata.itemcf.ItemCFRecommender
   */
 object ItemCFRecommenderJob {
   def main(args: Array[String]): Unit = {
-    val input =  args(0)
-    val output = args(1)
+    val input =  "data/test.csv"
     val spark = SparkSession.builder()
+        .master("local[1]")
         .appName(this.getClass.getName.stripSuffix("$")).getOrCreate()
 
     import spark.implicits._
@@ -27,8 +27,8 @@ object ItemCFRecommenderJob {
       .setRatingCol("rating")
       .similarity(new PearsonCorrelationSimilarity())
     val items = itemCFRecommender.transform(ratingDF)
-    items.saveAsTextFile(output)
-    //items.collect().foreach(println)
+    //items.saveAsTextFile(output)
+    items.show()
 
   }
 }

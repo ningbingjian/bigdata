@@ -26,6 +26,7 @@ case class PrefAndSimilarity(itemid:Int,pref:Double,vector:MLV)
 case class Item( itemid:Int, value:Double)
 
 class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
+  import spark.implicits._
   var useridCol = "userid"
   var itemidCol = "itemid"
   var ratingCol = "rating"
@@ -261,7 +262,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
     //vectorAndPrefRdd.saveAsTextFile("/user/ning/als/vectorAndPrefRdd")
   }
 
-  def recommend() ={
+  def recommend():DataFrame ={
     //vectorAndPrefRdd.collect().foreach(println)
     val prefAndSimilarity = vectorAndPrefRdd.flatMap{
       case (itemid,vectorAndPref:VectorAndPref) =>
@@ -304,15 +305,17 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
             }
           }
           val reItems = lb
-            .sortWith((x,y) => x._2.compareTo(y._2) > 0)
+            //.sortWith((x,y) => x._2.compareTo(y._2) > 0)
             .take(recommenderNum)
             .map(item => Item(item._1,item._2))
 
           (userid,reItems)
 
       }
-    //recommenderItemsRDD.saveAsTextFile("/user/ning/als/recommenderItemsRDD")
-    recommenderItemsRDD
+    recommenderItemsRDD.flatMap(rating => {
+      val userid = rating._1
+      rating._2.map(item => (userid,item.itemid,item.value))
+    }).toDF(useridCol,itemidCol,ratingCol)
   }
 
 

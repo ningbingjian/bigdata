@@ -17,7 +17,7 @@ object RatingJob {
       ("u3","i3","play")
     ).toDF("userId","itemId","action")
       .createOrReplaceTempView("user_action")
-    val df = new SqlActionReader("select * from user_action",spark).read()
+    val df = spark.sql("select * from user_action")
     val weightMap = Map("like" -> 0.3,"play" -> 4.8)
     val wr = new WeightMemoryReader(weightMap)
     val rating = new Rating()

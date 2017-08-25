@@ -21,10 +21,4 @@
     from t_u,t_ri
     where t_u.out_userid = t_ri.out_userid az t_riu ;
   #end
-  #sql("recommenderItem")
-    load.csv 'data/channel.csv' az channel;
-    select * from user az t1 ;
-    select * from ip az t2;
-    select t1.*,t2.* ,channel.* from t1,t2,channel where t1.id=t2.id,.... az t3 ;
-  #end
 #end
