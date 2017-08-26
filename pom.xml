@@ -11,6 +11,7 @@
         <module>bigdata-itemcf</module>
         <module>bigdata-itemcf-example</module>
         <module>bigdata-recommender-example</module>
+        <module>bigdata-mongo-spark</module>
     </modules>
     <groupId>com.bigdata</groupId>
     <artifactId>bigdata</artifactId>
@@ -29,8 +30,7 @@
         <junit.version>4.4</junit.version>
         <jfinal.version>3.1</jfinal.version>
         <lucene.version>5.5.2</lucene.version>
-
-
+        <mongo.spark.version>2.2.0</mongo.spark.version>
     </properties>
     <dependencies>
 

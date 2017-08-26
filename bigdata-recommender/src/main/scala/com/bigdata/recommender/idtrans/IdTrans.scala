@@ -35,17 +35,15 @@ class IdTrans{ self =>
     val transDF = idDF.repartition(1)
         .rdd
         .mapPartitions(rows => {
-          val sdf = new SimpleDateFormat("yyyy-MM-dd")
-          val dt = sdf.format(new Date())
           var curid = 0
-          val newRows = ListBuffer[(Int,String,String)]()
+          val newRows = ListBuffer[(Int,String)]()
           for(row <- rows){
             val outid = row.get(0).toString
             curid = curid + 1
-            newRows.append((curid,outid,dt))
+            newRows.append((curid,outid))
           }
           newRows.toIterator
-        }).toDF(s"${inidCol}",s"${outidCol}","dt")
+        }).toDF(s"${inidCol}",s"${outidCol}")
    transDF
   }
 
