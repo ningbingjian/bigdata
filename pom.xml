@@ -12,6 +12,7 @@
         <module>bigdata-itemcf-example</module>
         <module>bigdata-recommender-example</module>
         <module>bigdata-mongo-spark</module>
+        <module>bigdata-zql-engine</module>
     </modules>
     <groupId>com.bigdata</groupId>
     <artifactId>bigdata</artifactId>
