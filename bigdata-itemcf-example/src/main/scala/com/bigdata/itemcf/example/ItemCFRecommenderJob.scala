@@ -25,7 +25,7 @@ object ItemCFRecommenderJob {
     itemCFRecommender.setUseridCol("user")
       .setItemidCol("product")
       .setRatingCol("rating")
-      .similarity(new PearsonCorrelationSimilarity())
+      .setSimilarity(new PearsonCorrelationSimilarity())
     val items = itemCFRecommender.transform(ratingDF)
     //items.saveAsTextFile(output)
     items.show()

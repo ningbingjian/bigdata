@@ -57,7 +57,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
     self.ratingCol = ratingCol
     self
   }
-  def similarity(similarity:VectorSimilarityMeasure):this.type = {
+  def setSimilarity(similarity:VectorSimilarityMeasure):this.type = {
     self.similarity = similarity
     self
   }
@@ -65,7 +65,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
     this.topSimilarityNum = num
     self
   }
-  def recommenderNum(recommenderNum:Int):this.type = {
+  def setRecommenderNum(recommenderNum:Int):this.type = {
     self.recommenderNum = recommenderNum
     self
   }

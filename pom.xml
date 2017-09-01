@@ -13,6 +13,8 @@
         <module>bigdata-recommender-example</module>
         <module>bigdata-mongo-spark</module>
         <module>bigdata-zql-engine</module>
+        <module>zsl/bigdata-zsl-engine</module>
+        <module>bigdata-zsl/bigdata-zsl-core</module>
     </modules>
     <groupId>com.bigdata</groupId>
     <artifactId>bigdata</artifactId>
