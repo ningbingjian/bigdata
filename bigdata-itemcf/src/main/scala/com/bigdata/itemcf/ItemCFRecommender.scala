@@ -96,7 +96,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
           (itemid,Vectors.sparse(Integer.MAX_VALUE,ratings.toSeq))
         }
       }
-    //itemVector.saveAsTextFile("/user/ning/als/itemVector")
+    itemVector.saveAsTextFile("/bd-os/huanwang/home/tmp/itemcf/itemVector")
   }
   def transUserVector() = {
     val ratingRDD = ratingDF.select(useridCol,itemidCol,ratingCol).rdd
@@ -114,7 +114,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
           (userid,Vectors.sparse(Integer.MAX_VALUE,ratings.toSeq))
         }
       }
-    //userVector.saveAsTextFile("/user/ning/als/userVector")
+    userVector.saveAsTextFile("/bd-os/huanwang/home/tmp/itemcf/userVector")
   }
   def normlize(): Unit ={
     //向量标准化
@@ -125,14 +125,16 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
         for(i <- 0 until normVector.indices.length){
           val userid = normVector.indices(i)
           val pref = normVector.values(i)
-          val vector = Vectors.sparse(Integer.MAX_VALUE,Seq((itemid,pref))).asInstanceOf[SparseVector]
-          buf append ((userid,vector))
+          if(pref != Double.NaN){
+            val vector = Vectors.sparse(Integer.MAX_VALUE,Seq((itemid,pref))).asInstanceOf[SparseVector]
+            buf append ((userid,vector))
+          }
         }
         buf
     }.reduceByKey((v1,v2) =>{
       EnHanceVectors.merge(v1,v2)
     },1000)
-    //normVector.saveAsTextFile("/user/ning/als/normVector")
+    normVector.saveAsTextFile("/bd-os/huanwang/home/tmp/itemcf/normVector")
 
     allNormVector = itemVector.map{
       case (itemid,vector) =>
@@ -163,7 +165,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
         }
         result
     }
-    //cooccurrencesVector.saveAsTextFile("/user/ning/als/cooccurrencesVector")
+    cooccurrencesVector.saveAsTextFile("/bd-os/huanwang/home/tmp/itemcf/cooccurrencesVector")
 
     similarityVector = cooccurrencesVector.groupByKey().map{
       case (itemid,vectors:Iterable[SparseVector]) =>
@@ -193,7 +195,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
         (itemid,Vectors.sparse(Integer.MAX_VALUE,indices.toArray,values.toArray))
 
     }
-    //similarityVector.saveAsTextFile("/user/ning/als/similarityVector")
+    similarityVector.saveAsTextFile("/bd-os/huanwang/home/tmp/itemcf/similarityVector")
   }
 
   def topSim()= {
@@ -224,7 +226,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
         val merge = EnHanceVectors.merge(v1,v2).asInstanceOf[SparseVector]
         EnHanceVectors.topK(merge,topSimilarityNum)
     }
-    //topSimilarityVector.saveAsTextFile("/user/ning/als/topSimilarityVector")
+    topSimilarityVector.saveAsTextFile("/bd-os/huanwang/home/tmp/itemcf/topSimilarityVector")
   }
 
   def partialMultiply()= {
@@ -259,7 +261,7 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
         }
         (itemid,VectorAndPref(Some(vector),Some(userids),Some(prefs)))
     }
-    //vectorAndPrefRdd.saveAsTextFile("/user/ning/als/vectorAndPrefRdd")
+    vectorAndPrefRdd.saveAsTextFile("/bd-os/huanwang/home/tmp/itemcf/vectorAndPrefRdd")
   }
 
   def recommend():DataFrame ={
@@ -279,7 +281,6 @@ class ItemCFRecommender(spark:SparkSession) extends Serializable{ self =>
         }
         lb
     }
-    //prefAndSimilarity.collect().foreach(println)
     val recommenderItemsRDD = prefAndSimilarity.groupByKey()
       .map{
         case (userid,prefAndSimilarities:Iterable[PrefAndSimilarity]) =>

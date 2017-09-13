@@ -2,6 +2,8 @@ package com.bigdata.zsl.core
 
 import org.parboiled2.ParserInput
 import org.parboiled2._
+
+import scala.collection.immutable
 /**
   *
   * Created by ning on 2017/9/1.
@@ -11,7 +13,10 @@ import org.parboiled2._
   *
   */
 object ZqlParser {
-  case class Load(sql:String)
+  trait  Zql{
+  }
+  case class Load(sql:String) extends Zql
+  case class Zqls(zql: immutable.Seq[_ <: Zql])
   def apply(zql:String) = {
     import Parser.DeliveryScheme.Either
     val parser = new ZqlParser(zql)
@@ -19,12 +24,11 @@ object ZqlParser {
   }
 
   def main(args: Array[String]): Unit = {
-    val sql1 ="   load tv.user as t1_1 ;"
+    val sql1 =
+      """
+        |load
+      """.stripMargin
     println(ZqlParser(sql1))
-    val sql2 ="  \n load tv.user as t1_1 ; \r\n"
-    println(ZqlParser(sql2))
-    val sql3 = sql1 + sql2
-    println(ZqlParser(sql3))
 
 
 
@@ -33,16 +37,19 @@ object ZqlParser {
 class ZqlParser(val input:ParserInput) extends Parser with StringBuilding{
   val SPACE = CharPredicate.Printable -- CharPredicate.Visible
   def zql = rule {
-     sql ~ EOI
+    parse ~ EOI
   }
-  def sql = rule {
-    zeroOrMore(load) | zeroOrMore(select) | zeroOrMore(save)
+  def parse = rule {
+    zeroOrMore(loadParse)/* | zeroOrMore(select) | zeroOrMore(save)*/
+  }
+  def loadParse = rule {
+      load ~ format ~ params ~ schema ~ conditions ~ as ~ table
   }
   def load = rule {
-      "load" ~ format ~ params ~ schema ~ conditions ~ as ~ table
+    BLANK ~ "load" ~ BLANK
   }
   def as = rule {
-    "as"
+    ""
   }
 
   def format = rule {
@@ -80,7 +87,7 @@ class ZqlParser(val input:ParserInput) extends Parser with StringBuilding{
   def MULNL = rule {
     zeroOrMore(NL)
   }
-  def GAP = rule {
+  def BLANK = rule {
     OWS ~ MULNL ~ OWS ~ MULNL
   }
   def VARIABLE = rule {

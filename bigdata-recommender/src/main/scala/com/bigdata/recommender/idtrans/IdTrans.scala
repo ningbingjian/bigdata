@@ -11,7 +11,7 @@ import scala.collection.mutable.ListBuffer
 /**
   * Created by ning on 2017/8/8.
   */
-class IdTrans{ self =>
+class IdTrans extends Serializable{ self =>
   var outidCol:String = _
   var inidCol:String = _
   def setOutidCol(outidCol:String):this.type = {
@@ -30,21 +30,43 @@ class IdTrans{ self =>
     */
   def transform(df:DataFrame):DataFrame = {
     val spark = df.sparkSession
-    import spark.implicits._
     val idDF = df.select(col(outidCol)).distinct()
+    //idTransWithOnePartiton(idDF)
+    idTransWithPartitionIndex(idDF)
+  }
+  private def idTransWithPartitionIndex(idDF:DataFrame):DataFrame = {
+    import idDF.sparkSession.implicits._
+    val numPartitions = 5
+    val step = (Integer.MAX_VALUE - 10000 * 10000) / (numPartitions + 1)
+    idDF.rdd.repartition(numPartitions).mapPartitionsWithIndex{
+      case (idx,iter) =>
+        val buf = ListBuffer[(Int,String)]()
+        val ids = iter.toSeq.map(_.get(0).toString).sorted
+        var curIdx =  step * idx + 1
+        for(id <- ids ){
+          buf.append((curIdx,id))
+          curIdx = curIdx + 1
+        }
+        buf.toIterator
+    }.toDF(s"${inidCol}",s"${outidCol}")
+  }
+  private def idTransWithOnePartiton(idDF:DataFrame):DataFrame = {
+    import idDF.sparkSession.implicits._
     val transDF = idDF.repartition(1)
-        .rdd
-        .mapPartitions(rows => {
-          var curid = 0
-          val newRows = ListBuffer[(Int,String)]()
-          for(row <- rows){
-            val outid = row.get(0).toString
-            curid = curid + 1
-            newRows.append((curid,outid))
-          }
-          newRows.toIterator
-        }).toDF(s"${inidCol}",s"${outidCol}")
-   transDF
+      .rdd
+      .map(_.get(0).toString)
+      .mapPartitions(ids => {
+        val sortIds = ids.toSeq.sorted
+        var curid = 0
+        val newRows = ListBuffer[(Int,String)]()
+        for(id <- sortIds){
+          val outid = id
+          curid = curid + 1
+          newRows.append((curid,outid))
+        }
+        newRows.toIterator
+      }).toDF(s"${inidCol}",s"${outidCol}")
+    transDF
   }
 
 
@@ -56,7 +78,7 @@ class IdTrans{ self =>
   def transformAndAttach(df:DataFrame):DataFrame = {
     val transDF = transform(df)
     val afterDF = df.alias("t1").join(transDF.alias("t2"),outidCol)
-      .select("t1.*",s"t2.${inidCol}")
+    //  .select("t1.*",s"t2.${inidCol}")
     afterDF
 
   }
@@ -69,7 +91,6 @@ class IdTrans{ self =>
     */
   def attach(transDF:DataFrame,df:DataFrame):DataFrame = {
     val afterDF = df.alias("t1").join(transDF.alias("t2"),outidCol)
-      .select("t1.*",s"t2.${inidCol}")
     afterDF
   }
 
@@ -81,7 +102,7 @@ class IdTrans{ self =>
     */
   def reverseTransform(transDF:DataFrame,df:DataFrame):DataFrame = {
     df.alias("t1").join(transDF.alias("t2"),inidCol)
-      .select("t1.*",s"t2.${outidCol}")
+    //  .select("t1.*",s"t2.${outidCol}")
   }
 
 

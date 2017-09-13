@@ -18,6 +18,9 @@ class ALSRecommender(spark:SparkSession) { self =>
   var trainTimes:Int = 1
   var finalMse = Double.MaxValue
   var finalModel:MatrixFactorizationModel = null
+  private var useridCol = "userid"
+  private var itemidCol = "itemid"
+  private var ratingCol = "rating"
   import spark.implicits._
 
   def setRank(rank:Int):this.type = {
@@ -40,8 +43,20 @@ class ALSRecommender(spark:SparkSession) { self =>
     self.recommenderNum = recommenderNum
     self
   }
+  def setUseridCol(useridCol:String):this.type = {
+    self.useridCol = useridCol
+    self
+  }
+  def setItemidCol(itemidCol:String):this.type = {
+    self.itemidCol = itemidCol
+    self
+  }
+  def setRatingCol(ratingCol:String):this.type = {
+    self.ratingCol = ratingCol
+    self
+  }
 
-  def setRating(ratingDF:DataFrame):this.type = {
+ def setRating(ratingDF:DataFrame):this.type = {
     self.ratingRDD = ratingDF.as[Rating].rdd
     self
   }
@@ -67,6 +82,52 @@ class ALSRecommender(spark:SparkSession) { self =>
       println(self.toString())
     }
     finalModel
+  }
+  def transform(ratingDF:DataFrame):DataFrame = {
+    train(false,ratingDF)
+    getRecommenderItemsDF
+  }
+  def train(implicited:Boolean,ratingDF: DataFrame):MatrixFactorizationModel = {
+    self.ratingRDD = ratingDF.select(col(useridCol).as("user"),col(itemidCol).as("product"),col("rating")).as[Rating]
+      .rdd
+    for (time <- 0 until trainTimes){
+      val splitRatingRDD = ratingRDD.randomSplit(Array[Double](trainRatio,1-trainRatio))
+      val trainRDD = splitRatingRDD(0)
+      trainRDD.foreach(println)
+      val model = if(implicited){
+        ALS.trainImplicit(trainRDD,rank,iterNum)
+      }else{
+        ALS.train(trainRDD,rank,iterNum,lambda)
+      }
+      val mse = getMSE(model)
+      if(mse < finalMse){
+        finalModel = model
+        finalMse = mse
+      }
+      println(self.toString())
+    }
+    finalModel
+  }
+  def getRecommenderItemsDF:DataFrame = {
+    val recommenders = finalModel.recommendProductsForUsers(recommenderNum)
+    val finalRecommender = ratingRDD.map(rating => (rating.user,rating))
+      .groupByKey(20)
+      .join(recommenders)
+      .flatMap{
+        case (user,(ratingIter,remRatings)) =>
+          val ratingItems = ratingIter.map(_.product).toSet
+          val finalRating = mutable.Set[Rating]()
+          for(remRating <- remRatings){
+            if(!ratingItems.contains(remRating.product)){
+              finalRating.add(remRating)
+            }
+          }
+          finalRating.toSeq
+
+      }
+    finalRecommender.toDS()
+      .select(col("user").as(useridCol),col("product").as(itemidCol),col("rating").as(ratingCol))
+      .toDF()
   }
   def getRecommenderItems:Dataset[(Int,Seq[Rating])] = {
     val recommenders = finalModel.recommendProductsForUsers(recommenderNum)

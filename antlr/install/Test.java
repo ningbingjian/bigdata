@@ -6,9 +6,6 @@
  * We make no guarantees that this code is fit for any purpose. 
  * Visit http://www.pragmaticprogrammer.com/titles/tpantlr2 for more book information.
 ***/
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.*;
-
 public class Test {
     public static void main(String[] args) throws Exception {
         // create a CharStream that reads from standard input

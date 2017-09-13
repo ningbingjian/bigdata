@@ -10,7 +10,7 @@ import com.bigdata.itemcf.ItemCFRecommender
   */
 object ItemCFRecommenderJob {
   def main(args: Array[String]): Unit = {
-    val input =  "data/test.csv"
+    val input =  "data/test1.data"
     val spark = SparkSession.builder()
         .master("local[1]")
         .appName(this.getClass.getName.stripSuffix("$")).getOrCreate()

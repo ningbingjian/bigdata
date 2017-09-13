@@ -13,6 +13,10 @@ object App {
   case class User(username:String,age:Int)
   case class Dept(name:String,num_person:Int)
   def main(args: Array[String]): Unit = {
+    println(
+
+      "a';'b;c;'     ;'d".split(";").mkString("\n ")
+    )
 /*    val spark = SparkSession.builder().master("local[1]")
       .appName("app").getOrCreate()
     import spark.implicits._

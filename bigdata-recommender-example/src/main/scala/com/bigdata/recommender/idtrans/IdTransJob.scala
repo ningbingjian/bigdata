@@ -9,6 +9,7 @@ object IdTransJob {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().master("local[1]")
       .appName(this.getClass.getName.stripSuffix("$"))
+        .config("spark.executor.heartbeatInterval", "120m")
       .getOrCreate()
     import spark.implicits._
     val recordDF = Seq(
@@ -17,6 +18,12 @@ object IdTransJob {
       ("u1","i3","2000"),
       ("u2","i1","2000"),
       ("u2","i2","2000"),
+      ("u4","i2","2000"),
+      ("u5","i2","2000"),
+      ("u6","i2","2000"),
+      ("u7","i2","2000"),
+      ("u8","i2","2000"),
+      ("u9","i2","2000"),
       ("u3","i1","2000")
 
     ).toDF("userId","itemId","year")
@@ -29,7 +36,6 @@ object IdTransJob {
       .setInidCol("in_itemid")
     //userTrans.transform(recordDF).show()
     //itemTrans.transform(recordDF).show()
-
     val usertransDF = userTrans.transform(recordDF)
     usertransDF.show()
     val afterUserTransDF = userTrans.attach(usertransDF,recordDF)
